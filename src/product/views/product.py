@@ -22,6 +22,7 @@ class SeeAllProduct(generic.TemplateView):
     def get_context_data(self, **kwargs):
         context = super(SeeAllProduct, self).get_context_data(**kwargs)
         context['products'] = Product.objects.all()
+        context['product_count'] = context['products'].count()
         variant_info = {}
         for product in context['products']:
             variant_info[product.id] = {'product_id': product.id, 'product_title': product.title,
