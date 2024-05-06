@@ -59,7 +59,7 @@
 
                 <tbody>
                 {% for product_id, product_info in variant_info.items %}
-                <tr>
+                <tr class="product-{{product_id}}">
                     <td>{{ product_info.product_id }}</td>
                     <td>{{ product_info.product_title }} <br> Created at : {{ product_info.created_at }}
                         {% if product_info.updated_at %} <br>Updated at : {{ product_info.updated_at }} {% endif %}</td>
@@ -94,16 +94,113 @@
         </div>
 
     </div>
-
     <div class="card-footer">
         <div class="row justify-content-between">
             <div class="col-md-6">
-                <p>Showing 1 to {{ product_count }} out of {{ product_count }}</p>
+                <p>Showing 1 to {% if product_count > 5 %} 5 {% else %}{{ product_count }}{% endif %} out of {{ product_count }}</p>
             </div>
             <div class="col-md-2">
-
+                <ul id="pagination" class="pagination">
+                </ul>
             </div>
         </div>
     </div>
+
 </div>
+{% endblock %}
+
+{% block script %}
+<script>
+    function generatePagination(currentPage, totalPages) {
+        var paginationContainer = document.getElementById('pagination');
+        paginationContainer.innerHTML = '';
+        var prevButton = document.createElement('li');
+        prevButton.className = 'page-item';
+        prevButton.id = 'prev-page';
+        var prevLink = document.createElement('a');
+        prevLink.className = 'page-link';
+        prevLink.href = '#';
+        prevLink.setAttribute('aria-label', 'Previous');
+        var prevSpan = document.createElement('span');
+        prevSpan.setAttribute('aria-hidden', 'true');
+        prevSpan.textContent = '«';
+        prevLink.appendChild(prevSpan);
+        prevButton.appendChild(prevLink);
+        paginationContainer.appendChild(prevButton);
+
+        for (var i = 1; i <= totalPages; i++) {
+            var pageItem = document.createElement('li');
+            pageItem.className = 'page-item';
+            var pageLink = document.createElement('a');
+            pageLink.className = 'page-link';
+            pageLink.href = '#'; // JavaScript will handle this
+            pageLink.textContent = i;
+            pageItem.appendChild(pageLink);
+            paginationContainer.appendChild(pageItem);
+        }
+        var nextButton = document.createElement('li');
+        nextButton.className = 'page-item';
+        nextButton.id = 'next-page';
+        var nextLink = document.createElement('a');
+        nextLink.className = 'page-link';
+        nextLink.href = '#';
+        nextLink.setAttribute('aria-label', 'Next');
+        var nextSpan = document.createElement('span');
+        nextSpan.setAttribute('aria-hidden', 'true');
+        nextSpan.textContent = '»';
+        nextLink.appendChild(nextSpan);
+        nextButton.appendChild(nextLink);
+        paginationContainer.appendChild(nextButton);
+        var pageLinks = paginationContainer.querySelectorAll('.page-link');
+        pageLinks.forEach(function(link) {
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                var page = parseInt(link.textContent);
+                console.log('Loading items for page:', page);
+            });
+        });
+    }
+
+    var productCount = {{ product_count }};
+    var totalPages = Math.ceil(productCount / 5);
+    generatePagination(1, totalPages);
+</script>
+<script>
+    document.getElementById('filterBtn').addEventListener('click', function() {
+        var title = document.getElementById('title').value;
+        var variant = document.getElementById('variant').value;
+        var priceFrom = document.getElementById('price_from').value;
+        var priceTo = document.getElementById('price_to').value;
+        var date = document.getElementById('date').value;
+
+        // Construct the URL with the collected input values
+        var baseUrl = 'searchedlist/'; // Replace with your URL endpoint
+        var queryParams = [];
+        if (title) queryParams.push('title=' + encodeURIComponent(title));
+        if (variant) queryParams.push('variant=' + encodeURIComponent(variant));
+        if (priceFrom) queryParams.push('price_from=' + encodeURIComponent(priceFrom));
+        if (priceTo) queryParams.push('price_to=' + encodeURIComponent(priceTo));
+        if (date) queryParams.push('date=' + encodeURIComponent(date));
+        var queryString = queryParams.join('&');
+        var url = baseUrl + '?' + queryString;
+
+        // Make an AJAX call
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Process the response data
+                console.log(data);
+                // Update the UI with the response data
+                // For example, display the filtered products in a table
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
+    });
+</script>
 {% endblock %}
