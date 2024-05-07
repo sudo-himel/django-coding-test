@@ -16,11 +16,13 @@
                 <input type="text" name="title" placeholder="Product Title" class="form-control">
             </div>
             <div class="col-md-2">
-                <select name="variant" id="" class="form-control">
-
+                <select name="variant" id="" class="form-control select2">
                     <option selected disabled>--Select A Variant--</option>
-                    {% for variant in variants %}
-                    <option>{{ variant.title }}</option>
+                    {% for variant in variants_with_titles %}
+                    <option disabled>{{ variant.variant_title }}</option>
+                    {% for product_variant_title in variant.product_variant_titles %}
+                    <option>{{ product_variant_title }}</option>
+                    {% endfor %}
                     {% endfor %}
                 </select>
             </div>
@@ -68,7 +70,7 @@
                         <dl class="row mb-0 variant-{{product_info.product_id}}" style="height: 80px; overflow: hidden" id="variant">
                             {% for variant in product_info.variants %}
                             <dt class="col-sm-3 pb-0">
-                                {{ variant.variant_title }}
+                                {{ variant.variant_title_one }} / {{ variant.variant_title_two }} / {{ variant.variant_title_three }}
                             </dt>
                             <dd class="col-sm-9">
                                 <dl class="row mb-0">
@@ -134,96 +136,6 @@
 
 {% block script %}
 <script>
-    function generatePagination(currentPage, totalPages) {
-        var paginationContainer = document.getElementById('pagination');
-        paginationContainer.innerHTML = '';
-        var prevButton = document.createElement('li');
-        prevButton.className = 'page-item';
-        prevButton.id = 'prev-page';
-        var prevLink = document.createElement('a');
-        prevLink.className = 'page-link';
-        prevLink.href = '#';
-        prevLink.setAttribute('aria-label', 'Previous');
-        var prevSpan = document.createElement('span');
-        prevSpan.setAttribute('aria-hidden', 'true');
-        prevSpan.textContent = '«';
-        prevLink.appendChild(prevSpan);
-        prevButton.appendChild(prevLink);
-        paginationContainer.appendChild(prevButton);
 
-        for (var i = 1; i <= totalPages; i++) {
-            var pageItem = document.createElement('li');
-            pageItem.className = 'page-item';
-            var pageLink = document.createElement('a');
-            pageLink.className = 'page-link';
-            pageLink.href = '#'; // JavaScript will handle this
-            pageLink.textContent = i;
-            pageItem.appendChild(pageLink);
-            paginationContainer.appendChild(pageItem);
-        }
-        var nextButton = document.createElement('li');
-        nextButton.className = 'page-item';
-        nextButton.id = 'next-page';
-        var nextLink = document.createElement('a');
-        nextLink.className = 'page-link';
-        nextLink.href = '#';
-        nextLink.setAttribute('aria-label', 'Next');
-        var nextSpan = document.createElement('span');
-        nextSpan.setAttribute('aria-hidden', 'true');
-        nextSpan.textContent = '»';
-        nextLink.appendChild(nextSpan);
-        nextButton.appendChild(nextLink);
-        paginationContainer.appendChild(nextButton);
-        var pageLinks = paginationContainer.querySelectorAll('.page-link');
-        pageLinks.forEach(function(link) {
-            link.addEventListener('click', function(event) {
-                event.preventDefault();
-                var page = parseInt(link.textContent);
-                console.log('Loading items for page:', page);
-            });
-        });
-    }
-
-    var productCount = {{ product_count }};
-    var totalPages = Math.ceil(productCount / 5);
-    generatePagination(1, totalPages);
-</script>
-<script>
-    document.getElementById('filterBtn').addEventListener('click', function() {
-        var title = document.getElementById('title').value;
-        var variant = document.getElementById('variant').value;
-        var priceFrom = document.getElementById('price_from').value;
-        var priceTo = document.getElementById('price_to').value;
-        var date = document.getElementById('date').value;
-
-        // Construct the URL with the collected input values
-        var baseUrl = 'searchedlist/'; // Replace with your URL endpoint
-        var queryParams = [];
-        if (title) queryParams.push('title=' + encodeURIComponent(title));
-        if (variant) queryParams.push('variant=' + encodeURIComponent(variant));
-        if (priceFrom) queryParams.push('price_from=' + encodeURIComponent(priceFrom));
-        if (priceTo) queryParams.push('price_to=' + encodeURIComponent(priceTo));
-        if (date) queryParams.push('date=' + encodeURIComponent(date));
-        var queryString = queryParams.join('&');
-        var url = baseUrl + '?' + queryString;
-
-        // Make an AJAX call
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Process the response data
-                console.log(data);
-                // Update the UI with the response data
-                // For example, display the filtered products in a table
-            })
-            .catch(error => {
-                console.error('There was a problem with the fetch operation:', error);
-            });
-    });
 </script>
 {% endblock %}

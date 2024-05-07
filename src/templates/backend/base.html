@@ -20,6 +20,7 @@
             rel="stylesheet">
     <link href="{% static '/css/app.css' %}" rel="preload" as="style">
     <link href="{% static '/css/chunk-vendors.css' %}" rel="preload" as="style">
+    <link href="{% static '/css/select2.min.css' %}" rel="stylesheet">
     <link href="{% static '/js/app.js' %}" rel="preload" as="script">
     <link href="{% static '/js/chunk-vendors.js' %}" rel="preload" as="script">
     <link href="{% static '/css/chunk-vendors.css' %}" rel="stylesheet">
@@ -69,9 +70,6 @@
     <i class="fas fa-angle-up"></i>
 </a>
 
-{% block script %}
-
-{% endblock %}
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
         integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
         crossorigin="anonymous"></script>
@@ -85,5 +83,20 @@
 
 <script type="text/javascript" src="{% static '/js/chunk-vendors.js' %}"></script>
 <script type="text/javascript" src="{% static '/js/app.js' %}"></script>
+<script type="text/javascript" src="{% static '/js/select2.min.js' %}"></script>
+<script>
+    $(document).ready(function () {
+        $(".select2").select2();
+    });
+    $(document).ready(function () {
+        $('.select2-results__option').first().on('click', function () {
+            $(this).hide();
+        });
+    });
+
+</script>
+{% block script %}
+
+{% endblock %}
 </body>
 </html>

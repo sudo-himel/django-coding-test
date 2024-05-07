@@ -21,31 +21,28 @@ class SeeAllProduct(generic.TemplateView):
     def get_context_data(self, **kwargs):
         context = super(SeeAllProduct, self).get_context_data(**kwargs)
 
-        # Retrieve parameters from request
         title = self.request.GET.get('title')
         variant = self.request.GET.get('variant')
         price_from = self.request.GET.get('price_from')
         price_to = self.request.GET.get('price_to')
         date = self.request.GET.get('date')
 
-        # Filter products queryset based on parameters
         products = Product.objects.all()
+        q_object = Q()
         if title:
-            products = products.filter(title__icontains=title)
+            q_object &= Q(title__icontains=title)
         if variant:
-            products = products.filter(productvariant__variant__title__icontains=variant)
+            q_object &= Q(productvariant__variant_title=variant)
         if price_from:
-            products = products.filter(productvariantprice__price__gte=price_from)
+            q_object &= Q(productvariantprice__price__gte=price_from)
         if price_to:
-            products = products.filter(productvariantprice__price__lte=price_to)
+            q_object &= Q(productvariantprice__price__lte=price_to)
         if date:
-            products = products.filter(created_at__date=date)
-
-        # Prefetch related variant prices and variants
+            q_object &= Q(created_at__date=date)
+        products = products.filter(q_object)
         products = products.prefetch_related('productvariantprice_set', 'productvariant_set')
 
-        # Pagination
-        paginator = Paginator(products, 5)  # Show 5 products per page
+        paginator = Paginator(products, 5)
         page_number = self.request.GET.get('page')
         try:
             products = paginator.page(page_number)
@@ -57,7 +54,18 @@ class SeeAllProduct(generic.TemplateView):
         context['products'] = products
         context['product_count'] = paginator.count
         context['variants'] = Variant.objects.all()
+        variants_with_titles = []
+        for variant in context['variants']:
+            # Access related ProductVariants for the current Variant
+            variant_titles = variant.productvariant_set.values_list('variant_title', flat=True).distinct()
 
+            # Append the variant id and titles to the list
+            variants_with_titles.append({
+                'variant_id': variant.id,
+                'variant_title': variant.title,
+                'product_variant_titles': variant_titles
+            })
+        context['variants_with_titles'] = variants_with_titles
         # Create variant info dictionary
         variant_info = {}
         for product in products:
@@ -70,16 +78,18 @@ class SeeAllProduct(generic.TemplateView):
                 'variants': []
             }
             for variant_price in product.productvariantprice_set.all():
-                variant = None
+                variant_titles = []
                 if variant_price.product_variant_one:
-                    variant = variant_price.product_variant_one
-                elif variant_price.product_variant_two:
-                    variant = variant_price.product_variant_two
-                elif variant_price.product_variant_three:
-                    variant = variant_price.product_variant_three
-                if variant:
+                    variant_titles.append(variant_price.product_variant_one.variant_title)
+                if variant_price.product_variant_two:
+                    variant_titles.append(variant_price.product_variant_two.variant_title)
+                if variant_price.product_variant_three:
+                    variant_titles.append(variant_price.product_variant_three.variant_title)
+                if variant_titles:
                     variant_info[product.id]['variants'].append({
-                        'variant_title': variant.variant_title,
+                        'variant_title_one': variant_titles[0] if len(variant_titles) >= 1 else None,
+                        'variant_title_two': variant_titles[1] if len(variant_titles) >= 2 else None,
+                        'variant_title_three': variant_titles[2] if len(variant_titles) >= 3 else None,
                         'price': variant_price.price,
                         'stock': variant_price.stock
                     })
