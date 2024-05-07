@@ -193,6 +193,7 @@ $(document).ready(function() {
                 processData: false,
                 contentType: false,
                 success: function(response) {
+                    location.reload();
                     console.log('Data updated successfully:', response);
                 },
                 error: function(xhr, status, error) {
