@@ -10,6 +10,8 @@ from product.views.product import ProductCreate
 
 from product import views
 
+from product.views.product import UpdateProduct
+
 app_name = "product"
 
 
@@ -26,4 +28,5 @@ urlpatterns = [
     path('create/', CreateProductView.as_view(), name='create.product'),
     path('list/', SeeAllProduct.as_view(), name='list.product'),
     path('create/product-save/', ProductCreate.as_view(), name='product-save.product'),
+    path('list/update/<id>/', UpdateProduct.as_view(), name='update.product')
 ]

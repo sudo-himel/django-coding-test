@@ -144,3 +144,24 @@ class ProductCreate(CreateView):
 
         return JsonResponse({'success': True})
 
+
+class UpdateProduct(CreateView):
+    def post(self, request, *args, **kwargs):
+        product_id = request.POST.get('product_id')
+        product_title = request.POST.get('product_title')
+        product_description = request.POST.get('product_description')
+
+        product, _ = Product.objects.update_or_create(
+            id=product_id,
+            defaults={
+                'title': product_title,
+                'description': product_description
+            }
+        )
+        variant_prices = ProductVariantPrice.objects.filter(product_id=product_id)
+
+        for i, variant_price in enumerate(variant_prices):
+            variant_price.price = float(request.POST.getlist('price')[i])
+            variant_price.stock = int(request.POST.getlist('stock')[i])
+            variant_price.save()
+        return JsonResponse({'success': True})

@@ -63,19 +63,19 @@
                 {% for product_id, product_info in variant_info.items %}
                 <tr class="product-{{product_id}}">
                     <td>{{ product_info.product_id }}</td>
-                    <td>{{ product_info.product_title }} <br> Created at : {{ product_info.created_at }}
+                    <td><span class="editable product_title">{{ product_info.product_title }}</span> <br> Created at : {{ product_info.created_at }}
                         {% if product_info.updated_at %} <br>Updated at : {{ product_info.updated_at }} {% endif %}</td>
-                    <td>{{ product_info.product_description }}</td>
+                    <td><span class="editable product_description">{{ product_info.product_description }}</span></td>
                     <td>
                         <dl class="row mb-0 variant-{{product_info.product_id}}" style="height: 80px; overflow: hidden" id="variant">
                             {% for variant in product_info.variants %}
                             <dt class="col-sm-3 pb-0">
-                                {{ variant.variant_title_one }} / {{ variant.variant_title_two }} / {{ variant.variant_title_three }}
+                                <span class="variant_title_one">{{ variant.variant_title_one }}</span> / <span class="variant_title_two">{{ variant.variant_title_two }}</span> / <span class="variant_title_three">{{ variant.variant_title_three }}</span>
                             </dt>
                             <dd class="col-sm-9">
                                 <dl class="row mb-0">
-                                    <dd class="col-sm-4 pb-0">Price: {{ variant.price }}</dd>
-                                    <dd class="col-sm-8 pb-0">InStock: {{ variant.stock }}</dd>
+                                    <dd class="col-sm-4 pb-0">Price: <span class="editable price">{{ variant.price }}</span></dd>
+                                    <dd class="col-sm-8 pb-0">InStock: <span class="editable stock">{{ variant.stock }}</span></dd>
                                 </dl>
                             </dd>
                             {% endfor %}
@@ -85,16 +85,16 @@
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <a href="" class="btn btn-success">Edit</a>
+                            <a href="" class="btn btn-success edit-button">Edit</a>
+                            <a href="" class="btn btn-success save-button" style="display: none;">Save</a>
+                            <a href="" class="btn btn-success cancel-button" style="display: none;">Cancel</a>
                         </div>
                     </td>
                 </tr>
                 {% endfor %}
                 </tbody>
-
             </table>
         </div>
-
     </div>
     <div class="card-footer">
         <div class="row justify-content-between">
@@ -136,6 +136,87 @@
 
 {% block script %}
 <script>
+// JavaScript (jQuery)
+$(document).ready(function() {
+    $('.edit-button').click(function(e) {
+        e.preventDefault();
+        var tr = $(this).closest('tr');
+        $(this).closest('tr').find('.editable').each(function() {
+            var text = $(this).text();
+            $(this).html('<input type="text" class="form-control" value="' + text + '">');
+        });
+        tr.find('.edit-button').hide();
+        tr.find('.save-button, .cancel-button').show();
+    });
+
+    $(document).ready(function() {
+        $(document).on('click', '.save-button', function() {
+            var tr = $(this).closest('tr');
+            var formData = new FormData();
+            formData.append('product_id', tr.find('td:first-child').text());
+            tr.find('.editable input').each(function() {
+                var fieldName = $(this).closest('span').attr('class').split(' ')[1];
+                formData.append(fieldName, $(this).val());
+            });
+            tr.find('.price, .stock').each(function() {
+                var fieldName = $(this).attr('class').split(' ')[1];
+                formData.append(fieldName, $(this).find('input').val());
+            });
+
+            function getCookie(name) {
+                var cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    var cookies = document.cookie.split(';');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            var csrftoken = getCookie('csrftoken');
+
+            // Include CSRF token in AJAX request headers
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            });
+            $.ajax({
+                type: 'POST',
+                url: 'update/' + formData.get('product_id') + '/',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    console.log('Data updated successfully:', response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error updating data:', error);
+                }
+            });
+        });
+    });
+
+
+    // Cancel button click event handler
+    $(document).on('click', '.cancel-button', function (e) {
+        e.preventDefault();
+        var tr = $(this).closest('tr');
+        tr.find('.editable input').each(function () {
+            var parentSpan = $(this).closest('.editable');
+            var text = $(this).val();
+            parentSpan.html(text);
+        });
+        tr.find('.edit-button').show();
+        tr.find('.save-button, .cancel-button').hide();
+    });
+
+});
 
 </script>
 {% endblock %}
