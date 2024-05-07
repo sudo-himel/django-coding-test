@@ -1,7 +1,7 @@
 from django.views import generic
 from django.db.models import Q
 from product.models import Variant, Product
-
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from product.models import ProductVariantPrice
 
 
@@ -20,12 +20,13 @@ class SeeAllProduct(generic.TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(SeeAllProduct, self).get_context_data(**kwargs)
+
+        # Retrieve parameters from request
         title = self.request.GET.get('title')
         variant = self.request.GET.get('variant')
         price_from = self.request.GET.get('price_from')
         price_to = self.request.GET.get('price_to')
         date = self.request.GET.get('date')
-        print(title, variant, price_to, price_from, date)
 
         # Filter products queryset based on parameters
         products = Product.objects.all()
@@ -34,24 +35,32 @@ class SeeAllProduct(generic.TemplateView):
         if variant:
             products = products.filter(productvariant__variant__title__icontains=variant)
         if price_from:
-            q_price_from = Q(productvariantprice__price__gte=price_from)
-            products = products.filter(q_price_from)
+            products = products.filter(productvariantprice__price__gte=price_from)
         if price_to:
-            q_price_to = Q(productvariantprice__price__lte=price_to)
-            products = products.filter(q_price_to)
+            products = products.filter(productvariantprice__price__lte=price_to)
         if date:
             products = products.filter(created_at__date=date)
 
         # Prefetch related variant prices and variants
         products = products.prefetch_related('productvariantprice_set', 'productvariant_set')
 
+        # Pagination
+        paginator = Paginator(products, 5)  # Show 5 products per page
+        page_number = self.request.GET.get('page')
+        try:
+            products = paginator.page(page_number)
+        except PageNotAnInteger:
+            products = paginator.page(1)
+        except EmptyPage:
+            products = paginator.page(paginator.num_pages)
+
         context['products'] = products
-        context['product_count'] = products.count()
+        context['product_count'] = paginator.count
         context['variants'] = Variant.objects.all()
 
         # Create variant info dictionary
         variant_info = {}
-        for product in context['products']:
+        for product in products:
             variant_info[product.id] = {
                 'product_id': product.id,
                 'product_title': product.title,
