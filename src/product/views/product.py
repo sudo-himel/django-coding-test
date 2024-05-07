@@ -1,8 +1,14 @@
+import json
+
 from django.views import generic
+from django.views.generic.edit import CreateView
 from django.db.models import Q
 from product.models import Variant, Product
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from product.models import ProductVariantPrice
+from django.http import JsonResponse
+
+from product.models import ProductVariant
 
 
 class CreateProductView(generic.TemplateView):
@@ -14,6 +20,7 @@ class CreateProductView(generic.TemplateView):
         context['product'] = True
         context['variants'] = list(variants.all())
         return context
+
 
 class SeeAllProduct(generic.TemplateView):
     template_name = 'products/list.html'
@@ -96,4 +103,44 @@ class SeeAllProduct(generic.TemplateView):
 
         context['variant_info'] = variant_info
         return context
+
+
+class ProductCreate(CreateView):
+    def post(self, request, *args, **kwargs):
+        payload = json.loads(request.body)
+
+        product = Product.objects.create(
+            title=payload['title'],
+            sku=payload['sku'],
+            description=payload['description']
+        )
+
+        product_variants = []
+        for variant_data in payload.get('product_variant', []):
+            variant = ProductVariant.objects.create(
+                variant_title=variant_data['tags'][0],
+                variant_id=variant_data['option'],
+                product=product
+            )
+            product_variants.append(variant)
+
+        price_data = payload.get('product_variant_prices', [])[0]
+        price = price_data.get('price', 0)
+        stock = price_data.get('stock', 0)
+        product_variant_price = ProductVariantPrice.objects.create(
+            price=price,
+            stock=stock,
+            product=product
+        )
+        for idx, product_variant in enumerate(product_variants):
+            if idx == 0:
+                product_variant_price.product_variant_one = product_variant
+            elif idx == 1:
+                product_variant_price.product_variant_two = product_variant
+            elif idx == 2:
+                product_variant_price.product_variant_three = product_variant
+
+        product_variant_price.save()
+
+        return JsonResponse({'success': True})
 

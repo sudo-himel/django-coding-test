@@ -6,7 +6,15 @@ from product.views.variant import VariantView, VariantCreateView, VariantEditVie
 
 from product.views.product import SeeAllProduct
 
+from product.views.product import ProductCreate
+
+from product import views
+
 app_name = "product"
+
+
+
+
 
 urlpatterns = [
     # Variants URLs
@@ -17,4 +25,5 @@ urlpatterns = [
     # Products URLs
     path('create/', CreateProductView.as_view(), name='create.product'),
     path('list/', SeeAllProduct.as_view(), name='list.product'),
+    path('create/product-save/', ProductCreate.as_view(), name='product-save.product'),
 ]

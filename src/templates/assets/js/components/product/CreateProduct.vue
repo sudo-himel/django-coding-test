@@ -92,6 +92,7 @@
     </div>
 
     <button @click="saveProduct" type="submit" class="btn btn-lg btn-primary">Save</button>
+
     <button type="button" class="btn btn-secondary btn-lg">Cancel</button>
   </section>
 </template>
@@ -135,6 +136,12 @@ export default {
     }
   },
   methods: {
+    handleFileSuccess(file, response) {
+      this.images.push(response.url);
+    },
+    uploadFiles() {
+      this.$refs.myVueDropzone.processQueue();
+    },
     // it will push a new object into product variant
     newVariant() {
       let all_variants = this.variants.map(el => el.id)
@@ -190,13 +197,24 @@ export default {
       }
 
 
-      axios.post('/product', product).then(response => {
-        console.log(response.data);
+      function getCookie(name) {
+        const cookieValue = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+        return cookieValue ? cookieValue.pop() : '';
+      }
+
+
+      axios.post('product-save/', product,{
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'Content-Type': 'application/json'
+        }
+      }).then(response => {
+        console.log("Response "+response.data);
       }).catch(error => {
         console.log(error);
       })
 
-      console.log(product);
+      console.log("product "+product);
     }
 
 
